@@ -28,7 +28,7 @@ module "B"{
     //ipam_pool_id = module.ipam.ipam_pool_id
     segment = "SegB"
     name = "SegB"
-    ofccidr = "100.64.0.0/24"
+    exchcidr = "100.64.0.0/24"
     pool_map = module.ipam.poolmap
     //poolchild = module.ipam.poolchild
     depends_on = [ module.corenetwork, module.ipam  ]
@@ -41,7 +41,7 @@ module "A"{
     //ipam_pool_id = module.ipam.ipam_pool_id
     segment = "SegA"
     name = "SegA"
-    ofccidr = "100.64.0.0/24"
+    exchcidr = "100.64.0.0/24"
     pool_map = module.ipam.poolmap
     //poolchild = module.ipam.poolchild
     depends_on = [ module.corenetwork, module.ipam ]

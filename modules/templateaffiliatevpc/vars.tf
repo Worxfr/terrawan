@@ -10,7 +10,7 @@ variable "name" {
   default     = "myproject"  # You can change this default value
 }
 
-variable "ofccidr" {
+variable "exchcidr" {
   description = "The CIDR block for the office VPC"
   type        = string
   default     = "100.64.0.0/24"  # You can change this default value

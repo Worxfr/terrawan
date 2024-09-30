@@ -1,13 +1,13 @@
 
 
 
-resource "aws_vpc" "ofcvpc" {
+resource "aws_vpc" "exchvpc" {
   ipv4_ipam_pool_id   = var.pool_map[var.region]
   ipv4_netmask_length = 24
   enable_dns_hostnames = true
   enable_dns_support = true
   tags = {
-    Name = "${var.name}-vpc-ofc"
+    Name = "${var.name}-vpc-exch"
   }
   //depends_on = [ var.poolchild ]
 }
@@ -31,24 +31,24 @@ resource "aws_internet_gateway" "IGWAff" {
   }
 }
 
-resource "aws_subnet" "sub-ofc" {
-  cidr_block        =  cidrsubnet(aws_vpc.ofcvpc.cidr_block, 4, 0)
+resource "aws_subnet" "sub-exch" {
+  cidr_block        =  cidrsubnet(aws_vpc.exchvpc.cidr_block, 4, 0)
   availability_zone  = data.aws_availability_zones.available.names[0]
-  vpc_id            =  aws_vpc.ofcvpc.id
+  vpc_id            =  aws_vpc.exchvpc.id
   map_public_ip_on_launch = false
   tags = {
-    Name = "${var.name}-sub-ofc"
+    Name = "${var.name}-sub-exch"
   }
-  depends_on = [ aws_vpc.ofcvpc ]
+  depends_on = [ aws_vpc.exchvpc ]
 }
 
 # create vpc route table
-resource "aws_route_table" "sub-ofc-tgw-rt" {
-  vpc_id =  aws_vpc.ofcvpc.id
+resource "aws_route_table" "sub-exch-tgw-rt" {
+  vpc_id =  aws_vpc.exchvpc.id
   tags = {
-    Name = "${var.name}-sub-ofc-tgw-rt"
+    Name = "${var.name}-sub-exch-tgw-rt"
   }
-  depends_on = [ aws_vpc.ofcvpc ]
+  depends_on = [ aws_vpc.exchvpc ]
 }
 
 # create vpc route table
@@ -60,15 +60,15 @@ resource "aws_route_table" "sub-aff-pub-rt" {
   depends_on = [ aws_vpc.affvpc ]
 }
 
-resource "aws_subnet" "sub-ofc-tgw" {
-  cidr_block        =  cidrsubnet(aws_vpc.ofcvpc.cidr_block, 4, 1)
+resource "aws_subnet" "sub-exch-tgw" {
+  cidr_block        =  cidrsubnet(aws_vpc.exchvpc.cidr_block, 4, 1)
   availability_zone  = data.aws_availability_zones.available.names[0]
-  vpc_id            =  aws_vpc.ofcvpc.id
+  vpc_id            =  aws_vpc.exchvpc.id
   map_public_ip_on_launch = false
   tags = {
-    Name = "${var.name}-sub-ofc-tgw"
+    Name = "${var.name}-sub-exch-tgw"
   }
-  depends_on = [ aws_vpc.ofcvpc ]
+  depends_on = [ aws_vpc.exchvpc ]
 }
 
 resource "aws_subnet" "sub-aff" {
@@ -96,9 +96,9 @@ resource "aws_subnet" "sub-aff-pub" {
   depends_on = [ aws_vpc.affvpc ]
 }
 
-resource "aws_route_table_association" "sub-ofc-tgw-rt-asso" {
-  subnet_id      = aws_subnet.sub-ofc-tgw.id
-  route_table_id = aws_route_table.sub-ofc-tgw-rt.id
+resource "aws_route_table_association" "sub-exch-tgw-rt-asso" {
+  subnet_id      = aws_subnet.sub-exch-tgw.id
+  route_table_id = aws_route_table.sub-exch-tgw-rt.id
 }
 
 resource "aws_route_table_association" "sub-aff-pub-rt-asso" {
@@ -115,7 +115,7 @@ resource "aws_eip" "nateip" {
     depends_on = [ aws_internet_gateway.IGWAff ]
 }
 
-resource "aws_nat_gateway" "PrivateNatGW-OFC" {
+resource "aws_nat_gateway" "PrivateNatGW-exch" {
   allocation_id = aws_eip.nateip.id
   connectivity_type = "public"
   subnet_id         = aws_subnet.sub-aff-pub.id
@@ -127,11 +127,11 @@ resource "aws_nat_gateway" "PrivateNatGW-OFC" {
 
 resource "aws_nat_gateway" "PublicNatGW-AFF" {
   connectivity_type = "private"
-  subnet_id         = aws_subnet.sub-ofc.id
+  subnet_id         = aws_subnet.sub-exch.id
   tags = {
     Name = "${var.name}-nat-gw-priv"
   }
-  depends_on = [ aws_vpc.ofcvpc ]
+  depends_on = [ aws_vpc.exchvpc ]
 }
 
 resource "aws_ec2_transit_gateway" "tgw" {
@@ -141,7 +141,7 @@ resource "aws_ec2_transit_gateway" "tgw" {
   tags                            = {
     Name = "${var.name}-tgw"
   }
-  depends_on = [ aws_vpc.ofcvpc, aws_vpc.affvpc ]
+  depends_on = [ aws_vpc.exchvpc, aws_vpc.affvpc ]
 }
 
 /*resource "aws_ec2_transit_gateway_route_table" "tgw-rt" {
@@ -166,9 +166,9 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "tgw-att-vpc-1" {
 }
 
 resource "aws_ec2_transit_gateway_vpc_attachment" "tgw-att-vpc-2" {
-  subnet_ids         = ["${aws_subnet.sub-ofc-tgw.id}"]
+  subnet_ids         = ["${aws_subnet.sub-exch-tgw.id}"]
   transit_gateway_id = "${aws_ec2_transit_gateway.tgw.id}"
-  vpc_id             = "${aws_vpc.ofcvpc.id}"
+  vpc_id             = "${aws_vpc.exchvpc.id}"
   transit_gateway_default_route_table_association = true
   transit_gateway_default_route_table_propagation = true
   tags               = {
@@ -177,7 +177,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "tgw-att-vpc-2" {
   depends_on = [aws_ec2_transit_gateway.tgw]
 }
 
-# create a OFC transit gateway route
+# create a exch transit gateway route
 resource "aws_ec2_transit_gateway_route" "tgw-route-1" {
   destination_cidr_block         = "0.0.0.0/0"
   transit_gateway_attachment_id  = "${aws_ec2_transit_gateway_vpc_attachment.tgw-att-vpc-2.id}"
@@ -186,14 +186,14 @@ resource "aws_ec2_transit_gateway_route" "tgw-route-1" {
 }
 
 
-resource "aws_route" "privSUb-default-vpcaff-to-ofc-10" {
+resource "aws_route" "privSUb-default-vpcaff-to-exch-10" {
   route_table_id         = aws_vpc.affvpc.default_route_table_id
   destination_cidr_block = "10.0.0.0/8"
   transit_gateway_id     = "${aws_ec2_transit_gateway.tgw.id}"
   depends_on             = [aws_vpc.affvpc, aws_ec2_transit_gateway.tgw]
 }
 
-resource "aws_route" "privSUb-default-vpcaff-to-ofc-100" {
+resource "aws_route" "privSUb-default-vpcaff-to-exch-100" {
   route_table_id         = aws_vpc.affvpc.default_route_table_id
   destination_cidr_block = "100.64.0.0/20"
   transit_gateway_id     = "${aws_ec2_transit_gateway.tgw.id}"
@@ -203,7 +203,7 @@ resource "aws_route" "privSUb-default-vpcaff-to-ofc-100" {
 resource "aws_route" "privSUb-default-vpcaff" {
   route_table_id         = aws_vpc.affvpc.default_route_table_id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.PrivateNatGW-OFC.id
+  nat_gateway_id         = aws_nat_gateway.PrivateNatGW-exch.id
   depends_on             = [aws_vpc.affvpc, aws_ec2_transit_gateway.tgw]
 }
 
@@ -214,15 +214,15 @@ resource "aws_route" "pubSUb-default-vpcaff" {
   depends_on             = [aws_vpc.affvpc, aws_internet_gateway.IGWAff]
 }
 
-resource "aws_route" "vpcofc-to-vpcaff" {
-  route_table_id         = aws_vpc.ofcvpc.default_route_table_id
+resource "aws_route" "vpcexch-to-vpcaff" {
+  route_table_id         = aws_vpc.exchvpc.default_route_table_id
   destination_cidr_block = var.affcidr
   transit_gateway_id     = "${aws_ec2_transit_gateway.tgw.id}"
-  depends_on             = [aws_vpc.ofcvpc, aws_ec2_transit_gateway.tgw]
+  depends_on             = [aws_vpc.exchvpc, aws_ec2_transit_gateway.tgw]
 }
 
-resource "aws_route" "default-vpcofctgw" {
-  route_table_id         = aws_route_table.sub-ofc-tgw-rt.id
+resource "aws_route" "default-vpcexchtgw" {
+  route_table_id         = aws_route_table.sub-exch-tgw-rt.id
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = aws_nat_gateway.PublicNatGW-AFF.id
   depends_on             = [aws_vpc.affvpc, aws_ec2_transit_gateway.tgw, var.core_depends_on]
@@ -366,7 +366,7 @@ resource "aws_instance" "web_server" {
     Name = "${var.name}-web-server"
   }
 
-  depends_on = [ aws_internet_gateway.IGWAff,aws_nat_gateway.PrivateNatGW-OFC ]
+  depends_on = [ aws_internet_gateway.IGWAff,aws_nat_gateway.PrivateNatGW-exch ]
 }
 
 # Data source to get the latest Amazon Linux 2 AMI
@@ -385,7 +385,7 @@ resource "aws_lb" "nlb" {
   name               = "${var.name}-nlb"
   internal           = true
   load_balancer_type = "network"
-  subnets            = [aws_subnet.sub-ofc.id]
+  subnets            = [aws_subnet.sub-exch.id]
 
   enable_deletion_protection = false
 
@@ -400,7 +400,7 @@ resource "aws_lb_target_group" "tg" {
   port        = 80
   protocol    = "TCP"
   target_type = "ip"
-  vpc_id      = aws_vpc.ofcvpc.id
+  vpc_id      = aws_vpc.exchvpc.id
 
   health_check {
     enabled             = true
@@ -438,28 +438,28 @@ resource "aws_lb_listener" "front_end" {
 }
 
 # attach the vpc to the Cloudwan corenetwork
-resource "aws_networkmanager_vpc_attachment" "ofcvpsegmentcattach" {
+resource "aws_networkmanager_vpc_attachment" "exchvpsegmentcattach" {
   core_network_id = var.core_network_id
-  subnet_arns     = [aws_subnet.sub-ofc.arn]
-  vpc_arn         = aws_vpc.ofcvpc.arn
+  subnet_arns     = [aws_subnet.sub-exch.arn]
+  vpc_arn         = aws_vpc.exchvpc.arn
   
   tags = {
-    Name = "${var.name}-ofcvpc",
+    Name = "${var.name}-exchvpc",
     CWAttach = var.segment
   }
-  depends_on = [ aws_subnet.sub-ofc, var.core_depends_on ]
+  depends_on = [ aws_subnet.sub-exch, var.core_depends_on ]
 }
 
 resource "aws_networkmanager_attachment_accepter" "test" {
-  attachment_id   = aws_networkmanager_vpc_attachment.ofcvpsegmentcattach.id
-  attachment_type = aws_networkmanager_vpc_attachment.ofcvpsegmentcattach.attachment_type
-  depends_on = [ aws_networkmanager_vpc_attachment.ofcvpsegmentcattach ]
+  attachment_id   = aws_networkmanager_vpc_attachment.exchvpsegmentcattach.id
+  attachment_type = aws_networkmanager_vpc_attachment.exchvpsegmentcattach.attachment_type
+  depends_on = [ aws_networkmanager_vpc_attachment.exchvpsegmentcattach ]
 }
 
 # Default to Cloudwan
-resource "aws_route" "default-vpcofc" {
-  route_table_id         = aws_vpc.ofcvpc.default_route_table_id
+resource "aws_route" "default-vpcexch" {
+  route_table_id         = aws_vpc.exchvpc.default_route_table_id
   destination_cidr_block = "0.0.0.0/0"
   core_network_arn = var.core_network_arn
-  depends_on             = [aws_vpc.ofcvpc, aws_networkmanager_attachment_accepter.test]
+  depends_on             = [aws_vpc.exchvpc, aws_networkmanager_attachment_accepter.test]
 }

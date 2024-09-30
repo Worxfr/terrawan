@@ -1,18 +1,18 @@
 # VPC Outputs
 output "vpc_id" {
   description = "The ID of the VPC"
-  value       = aws_vpc.ofcvpc.id
+  value       = aws_vpc.exchvpc.id
 }
 
 output "vpc_cidr_block" {
   description = "The CIDR block of the VPC"
-  value       = aws_vpc.ofcvpc.cidr_block
+  value       = aws_vpc.exchvpc.cidr_block
 }
 
 # Subnet Outputs
-output "subnet_ofc_id" {
-  description = "The ID of the OFC subnet"
-  value       = aws_subnet.sub-ofc.id
+output "subnet_exch_id" {
+  description = "The ID of the exch subnet"
+  value       = aws_subnet.sub-exch.id
 }
 
 output "subnet_aff_id" {
