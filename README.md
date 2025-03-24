@@ -79,7 +79,7 @@ The project is organized into several modules:
 3. Configure Backend
 
 Create s3.tfbackend file:
-
+```
 terraform {
   backend "s3" {
     bucket = "XXXXXXXXXXXXXXXX"
@@ -87,6 +87,7 @@ terraform {
     region = "us-east-1"
   }
 }
+```
 
 4. Initialize Terraform:
 ```
