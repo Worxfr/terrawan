@@ -76,16 +76,28 @@ The project is organized into several modules:
 
 1. Clone the repository
 2. Navigate to the project directory
-3. Initialize Terraform:
+3. Configure Backend
+
+Create s3.tfbackend file:
+
+terraform {
+  backend "s3" {
+    bucket = "XXXXXXXXXXXXXXXX"
+    key    = "terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
+4. Initialize Terraform:
 ```
-terraform init
+terraform init -backend-config=s3.tfbackend
 ```
-4. Review and modify the `variables.tf` file as needed
-5. Plan the Terraform execution:
+5. Review and modify the `variables.tf` file as needed
+6. Plan the Terraform execution:
 ```
 terraform plan
 ```
-6. Apply the Terraform configuration:
+7. Apply the Terraform configuration:
 ```
 terraform apply
 ```

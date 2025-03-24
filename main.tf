@@ -11,6 +11,10 @@ provider "aws" {
   region = var.region
 }
 
+terraform {
+  backend "s3" {}
+}
+
 module "corenetwork" {
   source = "./modules/corenetwork"
   name = "MyTEST"
@@ -23,6 +27,7 @@ module "ipam" {
 
 module "B"{
     source = "./modules/templateaffiliatevpc"
+    region = var.region
     core_network_arn = module.corenetwork.core_network_arn
     core_network_id = module.corenetwork.core_network_id
     //ipam_pool_id = module.ipam.ipam_pool_id
@@ -36,6 +41,7 @@ module "B"{
 
 module "A"{
     source = "./modules/templateaffiliatevpc"
+    region = var.region
     core_network_arn = module.corenetwork.core_network_arn
     core_network_id = module.corenetwork.core_network_id
     //ipam_pool_id = module.ipam.ipam_pool_id
